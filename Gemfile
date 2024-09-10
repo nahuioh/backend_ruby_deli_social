@@ -30,4 +30,3 @@ gem "ostruct"
 gem "ffi"
 gem "mailgun-ruby"
 gem "rack-cors"
-gem "dotenv-rails", groups: [ :development, :test ]
