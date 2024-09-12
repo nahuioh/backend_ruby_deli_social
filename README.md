@@ -13,6 +13,6 @@ Things you may want to cover:
 
 * Correr docker-compose build y despues docker-compose up
 
-* Ir a la url http:localhost:3000 para verificar que este corriendo la app
+* Ir a la url http://localhost:3000/ para verificar que este corriendo la app
 
 
