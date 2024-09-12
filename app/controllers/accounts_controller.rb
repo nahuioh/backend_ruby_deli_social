@@ -1,27 +1,37 @@
 class AccountsController < ApplicationController
   require "mailgun-ruby"
 
+  # Servicio JWT para generar el token
+  require "jwt"
+
   def create
-    account = Account.find_or_initialize_by(email: account_params[:email])
+    respond_to do |format|
+      format.json do
+        account = Account.find_or_initialize_by(email: account_params[:email])
 
-    if account.new_record?
-      account.assign_attributes(account_params)
+        if account.new_record?
+          account.assign_attributes(account_params)
 
-      if account.save
-        token = SecureRandom.hex(10)  # Generar un token
+          if account.save
+            # Generar un token JWT
+            token = JsonWebToken.encode({ user_id: account.id })
 
-        if send_confirmation_email(account.email, account.nombreUsuario)
-          render json: { token: token, message: "Cuenta creada exitosamente. Revisa tu correo para confirmar tu cuenta." }, status: :created
+            if send_confirmation_email(account.email, account.nombreUsuario)
+              render json: { token: token, message: "Cuenta creada exitosamente. Revisa tu correo para confirmar tu cuenta." }, status: :created
+            else
+              Rails.logger.error "Fallo al enviar correo de confirmación #{account.email}"
+              render json: { errors: "Failed to send confirmation email." }, status: :unprocessable_entity
+            end
+          else
+            Rails.logger.error "Fallo al guardar la cuenta: #{account.errors.full_messages}"
+            render json: { errors: account.errors.full_messages }, status: :unprocessable_entity
+          end
         else
-          Rails.logger.error "Fallo al enviar correo de confirmación #{account.email}"
-          render json: { errors: [ "Failed to send confirmation email." ] }, status: :unprocessable_entity
+          # La cuenta ya existe, por lo que respondemos con 409 Conflict
+          Rails.logger.info "La cuenta con el email #{account.email} ya existe."
+          render json: { message: "La cuenta ya existe." }, status: :conflict
         end
-      else
-        Rails.logger.error "Fallo al guardar la cuenta: #{account.errors.full_messages}"
-        render json: { errors: account.errors.full_messages }, status: :unprocessable_entity
       end
-    else
-      render json: { message: "La cuenta ya existe." }, status: :conflict
     end
   end
 
@@ -55,7 +65,7 @@ class AccountsController < ApplicationController
       Rails.logger.info "Mailgun response: #{response.body}"
       true
     rescue RestClient::ExceptionWithResponse => e
-      Rails.logger.error "Failed to send confirmation email: #{e.response}"
+      Rails.logger.error "Failed to send confirmation email: #{e.response.body}"
       false
     rescue StandardError => e
       Rails.logger.error "Failed to send confirmation email: #{e.message}"
