@@ -5,20 +5,14 @@ application up and running.
 
 Things you may want to cover:
 
-* Ruby version
+* Tener instalado docker-desktop
 
-* System dependencies
+* Descargar el repositorio en github https://github.com/nahuioh/backend_ruby_deli_social
 
-* Configuration
+* Ir a la carpeta del repositorio
 
-* Database creation
+* Correr docker-compose build y despues docker-compose up
 
-* Database initialization
+* Ir a la url http:localhost:3000 para verificar que este corriendo la app
 
-* How to run the test suite
 
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
