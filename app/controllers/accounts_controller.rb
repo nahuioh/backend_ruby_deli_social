@@ -20,7 +20,7 @@ class AccountsController < ApplicationController
               render json: { token: token, message: "Cuenta creada exitosamente. Revisa tu correo para confirmar tu cuenta." }, status: :created
             else
               Rails.logger.error "Fallo al enviar correo de confirmación #{account.email}"
-              render json: { errors: "Failed to send confirmation email." }, status: :unprocessable_entity
+              render json: { errors: "Unicamente acepta correo nahuel.alm@outlook, por la cuenta free de mailgun!, osea error al enviar correo!" }, status: :unprocessable_entity
             end
           else
             Rails.logger.error "Fallo al guardar la cuenta: #{account.errors.full_messages}"
@@ -29,7 +29,7 @@ class AccountsController < ApplicationController
         else
           # La cuenta ya existe, por lo que respondemos con 409 Conflict
           Rails.logger.info "La cuenta con el email #{account.email} ya existe."
-          render json: { message: "La cuenta ya existe." }, status: :conflict
+          render json: { errors: "La cuenta ya existe." }, status: :conflict
         end
       end
     end
@@ -46,12 +46,12 @@ class AccountsController < ApplicationController
       Rails.logger.info "Sending confirmation email to #{email}"
 
       # URL y parámetros del mensaje
-      url = "https://api.mailgun.net/v3/sandboxdc6218c1de094f4a95a428aade4e48e3.mailgun.org/messages"
+      url = "https://api.mailgun.net/v3/sandbox33a0f8b55bc747c8a325c45e5ef904ed.mailgun.org/messages"
       message_params = {
-        from: "Mailgun Sandbox <postmaster@sandboxdc6218c1de094f4a95a428aade4e48e3.mailgun.org>",
+        from: "Mailgun Sandbox <postmaster@sandbox33a0f8b55bc747c8a325c45e5ef904ed.mailgun.org>",
         to: email,
         subject: "Confirmación de tu cuenta",
-        template: "deli newsletter register", # Usar la plantilla
+        template: "newsletter deli social", # Usar la plantilla
         "h:X-Mailgun-Variables": { user_name: nombreUsuario }.to_json
       }
 
@@ -59,7 +59,7 @@ class AccountsController < ApplicationController
       response = RestClient.post(
         url,
         message_params,
-        { Authorization: "Basic #{Base64.strict_encode64("api:9b45f411ac77492bbdb1ca3cfc41fcd0-826eddfb-c3fd5122")}" }
+        { Authorization: "Basic #{Base64.strict_encode64("api:1c8c6c8f669eca7d47810a0711ca820f-826eddfb-2ae27017")}" }
       )
 
       Rails.logger.info "Mailgun response: #{response.body}"
