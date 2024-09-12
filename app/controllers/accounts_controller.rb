@@ -1,7 +1,5 @@
 class AccountsController < ApplicationController
   require "mailgun-ruby"
-
-  # Servicio JWT para generar el token
   require "jwt"
 
   def create
@@ -15,20 +13,19 @@ class AccountsController < ApplicationController
           if account.save
             # Generar un token JWT
             token = JsonWebToken.encode({ user_id: account.id })
-
+            puts "Encoded Token: #{token}"  # Imprime el token en la consola
             if send_confirmation_email(account.email, account.nombreUsuario)
               render json: { token: token, message: "Cuenta creada exitosamente. Revisa tu correo para confirmar tu cuenta." }, status: :created
             else
-              Rails.logger.error "Fallo al enviar correo de confirmación #{account.email}"
-              render json: { errors: "Unicamente acepta correo nahuel.alm@outlook, por la cuenta free de mailgun!, osea error al enviar correo!" }, status: :unprocessable_entity
+              # Rails.logger.error "Fallo al enviar correo de confirmación #{account.email}"
+              render json: { errors: "Error al enviar correo de confirmación." }, status: :unprocessable_entity
             end
           else
-            Rails.logger.error "Fallo al guardar la cuenta: #{account.errors.full_messages}"
+            # Rails.logger.error "Fallo al guardar la cuenta: #{account.errors.full_messages}"
             render json: { errors: account.errors.full_messages }, status: :unprocessable_entity
           end
         else
-          # La cuenta ya existe, por lo que respondemos con 409 Conflict
-          Rails.logger.info "La cuenta con el email #{account.email} ya existe."
+          # Rails.logger.info "La cuenta con el email #{account.email} ya existe."
           render json: { errors: "La cuenta ya existe." }, status: :conflict
         end
       end
@@ -43,12 +40,12 @@ class AccountsController < ApplicationController
 
   def send_confirmation_email(email, nombreUsuario)
     begin
-      Rails.logger.info "Sending confirmation email to #{email}"
+      # Rails.logger.info "Sending confirmation email to #{email}"
 
       # URL y parámetros del mensaje
-      url = "https://api.mailgun.net/v3/sandbox33a0f8b55bc747c8a325c45e5ef904ed.mailgun.org/messages"
+      url = "https://api.mailgun.net/v3/#{ENV['MAILGUN_DOMAIN']}/messages"
       message_params = {
-        from: "Mailgun Sandbox <postmaster@sandbox33a0f8b55bc747c8a325c45e5ef904ed.mailgun.org>",
+        from: "Mailgun Sandbox <#{ENV['MAILGUN_FROM_EMAIL']}>",
         to: email,
         subject: "Confirmación de tu cuenta",
         template: "newsletter deli social", # Usar la plantilla
@@ -59,7 +56,7 @@ class AccountsController < ApplicationController
       response = RestClient.post(
         url,
         message_params,
-        { Authorization: "Basic #{Base64.strict_encode64("api:1c8c6c8f669eca7d47810a0711ca820f-826eddfb-2ae27017")}" }
+        { Authorization: "Basic #{Base64.strict_encode64("api:#{ENV['MAILGUN_API_KEY']}")}" }
       )
 
       Rails.logger.info "Mailgun response: #{response.body}"
@@ -68,7 +65,7 @@ class AccountsController < ApplicationController
       Rails.logger.error "Failed to send confirmation email: #{e.response.body}"
       false
     rescue StandardError => e
-      Rails.logger.error "Failed to send confirmation email: #{e.message}"
+      # Rails.logger.error "Failed to send confirmation email: #{e.message}"
       false
     end
   end
