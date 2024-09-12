@@ -1,6 +1,7 @@
 class AccountsController < ApplicationController
   require "mailgun-ruby"
   require "jwt"
+  require "rest-client"
 
   def create
     respond_to do |format|
@@ -17,15 +18,15 @@ class AccountsController < ApplicationController
             if send_confirmation_email(account.email, account.nombreUsuario)
               render json: { token: token, message: "Cuenta creada exitosamente. Revisa tu correo para confirmar tu cuenta." }, status: :created
             else
-              # Rails.logger.error "Fallo al enviar correo de confirmación #{account.email}"
+              Rails.logger.error "Fallo al enviar correo de confirmación #{account.email}"
               render json: { errors: "Error al enviar correo de confirmación." }, status: :unprocessable_entity
             end
           else
-            # Rails.logger.error "Fallo al guardar la cuenta: #{account.errors.full_messages}"
+            Rails.logger.error "Fallo al guardar la cuenta: #{account.errors.full_messages}"
             render json: { errors: account.errors.full_messages }, status: :unprocessable_entity
           end
         else
-          # Rails.logger.info "La cuenta con el email #{account.email} ya existe."
+          Rails.logger.info "La cuenta con el email #{account.email} ya existe."
           render json: { errors: "La cuenta ya existe." }, status: :conflict
         end
       end
@@ -40,7 +41,7 @@ class AccountsController < ApplicationController
 
   def send_confirmation_email(email, nombreUsuario)
     begin
-      # Rails.logger.info "Sending confirmation email to #{email}"
+      Rails.logger.info "Sending confirmation email to #{email}"
 
       # URL y parámetros del mensaje
       url = "https://api.mailgun.net/v3/#{ENV['MAILGUN_DOMAIN']}/messages"
@@ -48,7 +49,7 @@ class AccountsController < ApplicationController
         from: "Mailgun Sandbox <#{ENV['MAILGUN_FROM_EMAIL']}>",
         to: email,
         subject: "Confirmación de tu cuenta",
-        template: "newsletter deli social", # Usar la plantilla
+        template: ENV["TEMPLATE_NEWSLETTER"],
         "h:X-Mailgun-Variables": { user_name: nombreUsuario }.to_json
       }
 
@@ -65,7 +66,7 @@ class AccountsController < ApplicationController
       Rails.logger.error "Failed to send confirmation email: #{e.response.body}"
       false
     rescue StandardError => e
-      # Rails.logger.error "Failed to send confirmation email: #{e.message}"
+      Rails.logger.error "Failed to send confirmation email: #{e.message}"
       false
     end
   end
